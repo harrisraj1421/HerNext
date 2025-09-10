@@ -341,6 +341,148 @@ document.querySelector("#login button.btn-primary").addEventListener("click", as
 
   // Default to home page
   showPage("home");
+
+  // Profile rendering helper
+  function renderProfileFromStorage() {
+    try {
+      const savedProfile = JSON.parse(localStorage.getItem("hernext_profile") || "null");
+      if (!savedProfile) return;
+      const nameInput = document.getElementById("profileNameInput");
+      const roleInput = document.getElementById("profileRoleInput");
+      const companyInput = document.getElementById("profileCompanyInput");
+      const batchInput = document.getElementById("profileBatchInput");
+      const cityInput = document.getElementById("profileCityInput");
+      const aboutInput = document.getElementById("profileAboutInput");
+      const skillsInput = document.getElementById("profileSkillsInput");
+      const avatar = document.getElementById("profileAvatar");
+      if (nameInput) nameInput.value = savedProfile.name || "";
+      if (roleInput) roleInput.value = savedProfile.role || "";
+      if (companyInput) companyInput.value = savedProfile.company || "";
+      if (batchInput) batchInput.value = savedProfile.batch || "";
+      if (cityInput) cityInput.value = savedProfile.city || "";
+      if (aboutInput) aboutInput.value = savedProfile.about || "";
+      if (skillsInput) skillsInput.value = (savedProfile.skills || []).join(", ");
+      if (avatar) {
+        if (savedProfile.avatarUrl) {
+          avatar.style.backgroundImage = `url(${savedProfile.avatarUrl})`;
+          avatar.style.backgroundSize = "cover";
+          avatar.textContent = "";
+        } else if (savedProfile.name) {
+          avatar.textContent = savedProfile.name.trim().charAt(0).toUpperCase();
+        }
+      }
+      renderSkillsTags(savedProfile.skills || []);
+    } catch (_) {}
+  }
+
+  function renderSkillsTags(skills) {
+    const container = document.getElementById("skillsTags");
+    if (!container) return;
+    container.innerHTML = "";
+    skills.forEach(s => {
+      const span = document.createElement("span");
+      span.className = "skill-tag";
+      span.textContent = s;
+      container.appendChild(span);
+    });
+  }
+
+  // Profile form handlers with edit/save toggle
+  const profileForm = document.getElementById("profileEditForm");
+  const saveBasicInfoBtn = document.getElementById("saveBasicInfoBtn");
+  let isEditing = false;
+
+  function toggleEditMode() {
+    isEditing = !isEditing;
+    const inputs = profileForm.querySelectorAll("input");
+    
+    if (isEditing) {
+      inputs.forEach(input => input.disabled = false);
+      saveBasicInfoBtn.textContent = "Save Basic Info";
+      saveBasicInfoBtn.style.display = "block";
+    } else {
+      inputs.forEach(input => input.disabled = true);
+      saveBasicInfoBtn.style.display = "none";
+    }
+  }
+
+  if (profileForm) {
+    // Make inputs read-only initially
+    const inputs = profileForm.querySelectorAll("input");
+    inputs.forEach(input => input.disabled = true);
+    saveBasicInfoBtn.style.display = "none";
+
+    // Add edit button
+    const editBtn = document.createElement("button");
+    editBtn.type = "button";
+    editBtn.className = "btn btn-outline";
+    editBtn.textContent = "Edit";
+    editBtn.style.cssText = "margin-top: 10px; width: 100%;";
+    profileForm.appendChild(editBtn);
+
+    editBtn.addEventListener("click", toggleEditMode);
+
+    profileForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      if (isEditing) {
+        const profile = readProfileFromInputs();
+        saveProfile(profile);
+        renderProfileFromStorage();
+        toggleEditMode();
+        alert("Profile updated successfully!");
+      }
+    });
+  }
+
+  const saveAboutBtn = document.getElementById("saveAboutBtn");
+  if (saveAboutBtn) saveAboutBtn.addEventListener("click", () => {
+    const profile = readProfileFromInputs();
+    saveProfile(profile);
+    renderProfileFromStorage();
+  });
+
+  const saveSkillsBtn = document.getElementById("saveSkillsBtn");
+  if (saveSkillsBtn) saveSkillsBtn.addEventListener("click", () => {
+    const profile = readProfileFromInputs();
+    saveProfile(profile);
+    renderProfileFromStorage();
+  });
+
+  const profilePicInput = document.getElementById("profilePicInput");
+  if (profilePicInput) profilePicInput.addEventListener("change", async () => {
+    const file = profilePicInput.files && profilePicInput.files[0];
+    if (!file) return;
+    // Reuse backend upload to store avatar
+    const formData = new FormData();
+    formData.append("file", file);
+    try {
+      const res = await fetch("http://localhost:5000/api/upload", { method: "POST", body: formData });
+      const data = await res.json();
+      if (data && data.url) {
+        const current = readProfileFromInputs();
+        current.avatarUrl = data.url;
+        saveProfile(current);
+        renderProfileFromStorage();
+      }
+    } catch (_) {}
+  });
+
+  function readProfileFromInputs() {
+    const name = (document.getElementById("profileNameInput") || {}).value || "";
+    const role = (document.getElementById("profileRoleInput") || {}).value || "";
+    const company = (document.getElementById("profileCompanyInput") || {}).value || "";
+    const batch = (document.getElementById("profileBatchInput") || {}).value || "";
+    const city = (document.getElementById("profileCityInput") || {}).value || "";
+    const about = (document.getElementById("profileAboutInput") || {}).value || "";
+    const skillsRaw = (document.getElementById("profileSkillsInput") || {}).value || "";
+    const skills = skillsRaw.split(",").map(s => s.trim()).filter(Boolean);
+    const saved = JSON.parse(localStorage.getItem("hernext_profile") || "null") || {};
+    return { ...saved, name, role, company, batch, city, about, skills };
+  }
+
+  function saveProfile(profile) {
+    localStorage.setItem("hernext_profile", JSON.stringify(profile));
+  }
 })();
 
 // =============================
@@ -583,147 +725,4 @@ document.querySelector("#login button.btn-primary").addEventListener("click", as
       }
     }
   });
-})();
-
-  // Profile rendering helper populated below
-  function renderProfileFromStorage() {
-    try {
-      const savedProfile = JSON.parse(localStorage.getItem("hernext_profile") || "null");
-      if (!savedProfile) return;
-      const nameInput = document.getElementById("profileNameInput");
-      const roleInput = document.getElementById("profileRoleInput");
-      const companyInput = document.getElementById("profileCompanyInput");
-      const batchInput = document.getElementById("profileBatchInput");
-      const cityInput = document.getElementById("profileCityInput");
-      const aboutInput = document.getElementById("profileAboutInput");
-      const skillsInput = document.getElementById("profileSkillsInput");
-      const avatar = document.getElementById("profileAvatar");
-      if (nameInput) nameInput.value = savedProfile.name || "";
-      if (roleInput) roleInput.value = savedProfile.role || "";
-      if (companyInput) companyInput.value = savedProfile.company || "";
-      if (batchInput) batchInput.value = savedProfile.batch || "";
-      if (cityInput) cityInput.value = savedProfile.city || "";
-      if (aboutInput) aboutInput.value = savedProfile.about || "";
-      if (skillsInput) skillsInput.value = (savedProfile.skills || []).join(", ");
-      if (avatar) {
-        if (savedProfile.avatarUrl) {
-          avatar.style.backgroundImage = `url(${savedProfile.avatarUrl})`;
-          avatar.style.backgroundSize = "cover";
-          avatar.textContent = "";
-        } else if (savedProfile.name) {
-          avatar.textContent = savedProfile.name.trim().charAt(0).toUpperCase();
-        }
-      }
-      renderSkillsTags(savedProfile.skills || []);
-    } catch (_) {}
-  }
-
-  function renderSkillsTags(skills) {
-    const container = document.getElementById("skillsTags");
-    if (!container) return;
-    container.innerHTML = "";
-    skills.forEach(s => {
-      const span = document.createElement("span");
-      span.className = "skill-tag";
-      span.textContent = s;
-      container.appendChild(span);
-    });
-  }
-
-  // Profile form handlers with edit/save toggle
-  const profileForm = document.getElementById("profileEditForm");
-  const saveBasicInfoBtn = document.getElementById("saveBasicInfoBtn");
-  let isEditing = false;
-
-  function toggleEditMode() {
-    isEditing = !isEditing;
-    const inputs = profileForm.querySelectorAll("input");
-    
-    if (isEditing) {
-      inputs.forEach(input => input.disabled = false);
-      saveBasicInfoBtn.textContent = "Save Basic Info";
-      saveBasicInfoBtn.style.display = "block";
-    } else {
-      inputs.forEach(input => input.disabled = true);
-      saveBasicInfoBtn.style.display = "none";
-    }
-  }
-
-  if (profileForm) {
-    // Make inputs read-only initially
-    const inputs = profileForm.querySelectorAll("input");
-    inputs.forEach(input => input.disabled = true);
-    saveBasicInfoBtn.style.display = "none";
-
-    // Add edit button
-    const editBtn = document.createElement("button");
-    editBtn.type = "button";
-    editBtn.className = "btn btn-outline";
-    editBtn.textContent = "Edit";
-    editBtn.style.cssText = "margin-top: 10px; width: 100%;";
-    profileForm.appendChild(editBtn);
-
-    editBtn.addEventListener("click", toggleEditMode);
-
-    profileForm.addEventListener("submit", (e) => {
-      e.preventDefault();
-      if (isEditing) {
-        const profile = readProfileFromInputs();
-        saveProfile(profile);
-        renderProfileFromStorage();
-        toggleEditMode();
-        alert("Profile updated successfully!");
-      }
-    });
-  }
-
-  const saveAboutBtn = document.getElementById("saveAboutBtn");
-  if (saveAboutBtn) saveAboutBtn.addEventListener("click", () => {
-    const profile = readProfileFromInputs();
-    saveProfile(profile);
-    renderProfileFromStorage();
-  });
-
-  const saveSkillsBtn = document.getElementById("saveSkillsBtn");
-  if (saveSkillsBtn) saveSkillsBtn.addEventListener("click", () => {
-    const profile = readProfileFromInputs();
-    saveProfile(profile);
-    renderProfileFromStorage();
-  });
-
-  const profilePicInput = document.getElementById("profilePicInput");
-  if (profilePicInput) profilePicInput.addEventListener("change", async () => {
-    const file = profilePicInput.files && profilePicInput.files[0];
-    if (!file) return;
-    // Reuse backend upload to store avatar
-    const formData = new FormData();
-    formData.append("file", file);
-    try {
-      const res = await fetch("http://localhost:5000/api/upload", { method: "POST", body: formData });
-      const data = await res.json();
-      if (data && data.url) {
-        const current = readProfileFromInputs();
-        current.avatarUrl = data.url;
-        saveProfile(current);
-        renderProfileFromStorage();
-      }
-    } catch (_) {}
-  });
-
-  function readProfileFromInputs() {
-    const name = (document.getElementById("profileNameInput") || {}).value || "";
-    const role = (document.getElementById("profileRoleInput") || {}).value || "";
-    const company = (document.getElementById("profileCompanyInput") || {}).value || "";
-    const batch = (document.getElementById("profileBatchInput") || {}).value || "";
-    const city = (document.getElementById("profileCityInput") || {}).value || "";
-    const about = (document.getElementById("profileAboutInput") || {}).value || "";
-    const skillsRaw = (document.getElementById("profileSkillsInput") || {}).value || "";
-    const skills = skillsRaw.split(",").map(s => s.trim()).filter(Boolean);
-    const saved = JSON.parse(localStorage.getItem("hernext_profile") || "null") || {};
-    return { ...saved, name, role, company, batch, city, about, skills };
-  }
-
-  function saveProfile(profile) {
-    localStorage.setItem("hernext_profile", JSON.stringify(profile));
-  }
 })();
