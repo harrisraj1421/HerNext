@@ -2,39 +2,117 @@
 document.querySelector("#register button.btn-primary").addEventListener("click", async (e) => {
   e.preventDefault();
 
-  const fullName = document.querySelector("#register input[type='text']").value;
-  const email = document.querySelector("#register input[type='email']").value;
-  const password = document.querySelector("#register input[type='password']").value;
-  const mobile = document.querySelector("#register input[type='tel']").value;
-  const city = document.querySelector("#register select:nth-of-type(2)").value;
-  const state = document.querySelector("#register select:nth-of-type(1)").value;
-  const batch = document.querySelector("#register select:nth-of-type(3)").value;
+  // Get form values using proper IDs
+  const fullName = document.getElementById("regFullName")?.value?.trim();
+  const email = document.getElementById("regEmail")?.value?.trim();
+  const password = document.getElementById("regPassword")?.value?.trim();
+  const mobile = document.getElementById("regMobile")?.value?.trim();
+  const city = document.getElementById("regCity")?.value || "";
+  const state = document.getElementById("regState")?.value || "";
+  const batch = document.getElementById("regBatch")?.value || "";
 
-  const res = await fetch("http://localhost:5000/register", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ fullName, email, password, mobile, city, state, batch })
-  });
+  // Validate required fields
+  if (!fullName || !email || !password) {
+    alert("Please fill in all required fields (Name, Email, Password)");
+    return;
+  }
 
-  const data = await res.json();
-  alert(data.message || data.error);
+  // Show loading state
+  const registerBtn = document.querySelector("#register button.btn-primary");
+  const originalText = registerBtn.textContent;
+  registerBtn.disabled = true;
+  registerBtn.textContent = "Registering...";
+
+  try {
+    const requestData = { fullName, email, password, mobile, city, state, batch };
+    console.log("Sending registration request:", requestData);
+    
+    const res = await fetch("http://localhost:5000/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(requestData)
+    });
+
+    console.log("Registration response status:", res.status);
+    const data = await res.json();
+    console.log("Registration response data:", data);
+    
+    if (res.ok) {
+      alert("Registration successful! Please login to continue.");
+      // Clear form
+      document.getElementById("regFullName").value = "";
+      document.getElementById("regEmail").value = "";
+      document.getElementById("regPassword").value = "";
+      document.getElementById("regMobile").value = "";
+      document.getElementById("regCity").value = "";
+      document.getElementById("regState").value = "";
+      document.getElementById("regBatch").value = "";
+      // Redirect to login page
+      showPage("login");
+    } else {
+      alert(`Registration failed: ${data.error || "Unknown error"}`);
+    }
+  } catch (err) {
+    console.error("Registration error:", err);
+    alert("Registration failed. Please check your connection and try again.");
+  } finally {
+    // Reset button state
+    registerBtn.disabled = false;
+    registerBtn.textContent = originalText;
+  }
 });
 
 // Handle Login Button
 document.querySelector("#login button.btn-primary").addEventListener("click", async (e) => {
   e.preventDefault();
 
-  const email = document.querySelector("#login input[type='email']").value;
-  const password = document.querySelector("#login input[type='password']").value;
+  const email = document.getElementById("loginEmail")?.value?.trim();
+  const password = document.getElementById("loginPassword")?.value?.trim();
 
-  const res = await fetch("http://localhost:5000/login", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password })
-  });
+  // Validate required fields
+  if (!email || !password) {
+    alert("Please enter both email and password");
+    return;
+  }
 
-  const data = await res.json();
-  alert(data.message);
+  // Show loading state
+  const loginBtn = document.querySelector("#login button.btn-primary");
+  const originalText = loginBtn.textContent;
+  loginBtn.disabled = true;
+  loginBtn.textContent = "Logging in...";
+
+  try {
+    const requestData = { email, password };
+    console.log("Sending login request:", requestData);
+    
+    const res = await fetch("http://localhost:5000/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(requestData)
+    });
+
+    console.log("Login response status:", res.status);
+    const data = await res.json();
+    console.log("Login response data:", data);
+    
+    if (res.ok) {
+      alert("Login successful!");
+      // Clear form
+      document.getElementById("loginEmail").value = "";
+      document.getElementById("loginPassword").value = "";
+      // Redirect to home page
+      showPage("home");
+    } else {
+      alert(`Login failed: ${data.error || "Invalid credentials"}`);
+    }
+  } catch (err) {
+    console.error("Login error:", err);
+    alert("Login failed. Please check your connection and try again.");
+  } finally {
+    // Reset button state
+    loginBtn.disabled = false;
+    loginBtn.textContent = originalText;
+  }
 });
 
 // =============================
@@ -281,17 +359,44 @@ document.querySelector("#login button.btn-primary").addEventListener("click", as
   const registerBtn = document.getElementById("registerBtn");
 
   function showPage(id) {
-    pages.forEach(p => p.classList.remove("active"));
+    console.log("showPage called with:", id);
+    
+    // Hide all pages
+    pages.forEach(p => {
+      p.classList.remove("active");
+      p.style.display = "none";
+    });
+    
+    // Show the selected page
     const el = document.getElementById(id);
-    if (el) el.classList.add("active");
-    navLinks.forEach(a => a.classList.toggle("active", a.dataset.page === id));
+    if (el) {
+      el.classList.add("active");
+      el.style.display = "block";
+      console.log("Showing page:", id);
+    } else {
+      console.error("Page not found:", id);
+    }
+    
+    // Update navigation links
+    navLinks.forEach(a => {
+      a.classList.remove("active");
+      if (a.dataset.page === id) {
+        a.classList.add("active");
+      }
+    });
   }
+
+  // Make showPage globally available
+  window.showPage = showPage;
 
   navLinks.forEach(a => {
     a.addEventListener("click", (e) => {
       e.preventDefault();
       const page = a.dataset.page;
-      if (page) showPage(page);
+      console.log("Navigating to:", page);
+      if (page) {
+        showPage(page);
+      }
     });
   });
 
@@ -339,8 +444,18 @@ document.querySelector("#login button.btn-primary").addEventListener("click", as
     }
   } catch (_) {}
 
+  // Ensure all pages are hidden initially
+  pages.forEach(p => {
+    p.classList.remove("active");
+    p.style.display = "none";
+  });
+  
   // Default to home page
   showPage("home");
+  
+  // Debug: Log available pages and nav links
+  console.log("Available pages:", pages.map(p => p.id));
+  console.log("Available nav links:", navLinks.map(a => a.dataset.page));
 
   // Profile rendering helper
   function renderProfileFromStorage() {
@@ -725,4 +840,214 @@ document.querySelector("#login button.btn-primary").addEventListener("click", as
       }
     }
   });
+})();
+
+// =============================
+// Profile Setup Form Functionality
+// =============================
+(function setupProfileForm() {
+  const profileSetupPage = document.getElementById("profile-setup");
+  if (!profileSetupPage) return;
+
+  // Profile picture upload
+  const profilePicInput = document.getElementById("profilePicInput");
+  const profilePicPlaceholder = document.getElementById("profilePicPlaceholder");
+  
+  if (profilePicPlaceholder && profilePicInput) {
+    profilePicPlaceholder.addEventListener("click", () => profilePicInput.click());
+    
+    profilePicInput.addEventListener("change", async (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        // Upload to backend
+        const formData = new FormData();
+        formData.append("file", file);
+        
+        try {
+          const res = await fetch("http://localhost:5000/api/upload", {
+            method: "POST",
+            body: formData
+          });
+          const data = await res.json();
+          
+          if (data && data.url) {
+            // Update placeholder with uploaded image
+            profilePicPlaceholder.style.backgroundImage = `url(http://localhost:5000${data.url})`;
+            profilePicPlaceholder.style.backgroundSize = "cover";
+            profilePicPlaceholder.style.backgroundPosition = "center";
+            profilePicPlaceholder.innerHTML = "";
+          }
+        } catch (err) {
+          console.error("Profile picture upload failed:", err);
+          alert("Failed to upload profile picture");
+        }
+      }
+    });
+  }
+
+  // Dynamic achievements
+  const achievementsContainer = document.getElementById("achievementsContainer");
+  const addAchievementBtn = document.getElementById("addAchievement");
+  
+  function createAchievementItem() {
+    const item = document.createElement("div");
+    item.className = "achievement-item";
+    item.innerHTML = `
+      <input type="text" class="form-control achievement-input" placeholder="Enter an achievement...">
+      <button type="button" class="btn-remove-achievement">×</button>
+    `;
+    
+    // Show remove button for multiple items
+    const removeBtn = item.querySelector(".btn-remove-achievement");
+    removeBtn.addEventListener("click", () => {
+      item.remove();
+      updateRemoveButtons();
+    });
+    
+    return item;
+  }
+  
+  function updateRemoveButtons() {
+    const items = achievementsContainer.querySelectorAll(".achievement-item");
+    items.forEach((item, index) => {
+      const removeBtn = item.querySelector(".btn-remove-achievement");
+      removeBtn.style.display = items.length > 1 ? "block" : "none";
+    });
+  }
+  
+  if (addAchievementBtn && achievementsContainer) {
+    addAchievementBtn.addEventListener("click", () => {
+      achievementsContainer.appendChild(createAchievementItem());
+      updateRemoveButtons();
+    });
+    
+    // Initialize with one item
+    updateRemoveButtons();
+  }
+
+  // Form submission
+  const saveProfileBtn = document.getElementById("saveProfileBtn");
+  
+  if (saveProfileBtn) {
+    saveProfileBtn.addEventListener("click", async () => {
+      // Collect form data
+      const name = document.getElementById("profileName")?.value?.trim();
+      const role = document.getElementById("profileRole")?.value;
+      const company = document.getElementById("profileCompany")?.value?.trim();
+      const domain = document.getElementById("profileDomain")?.value?.trim();
+      const bio = document.getElementById("profileBio")?.value?.trim();
+      const demoLink = document.getElementById("profileDemoLink")?.value?.trim();
+      
+      // Validate required fields
+      if (!name) {
+        alert("Please enter your full name");
+        return;
+      }
+      
+      // Collect interests
+      const interests = [];
+      const interestCheckboxes = profileSetupPage.querySelectorAll(".interest-chip input[type='checkbox']:checked");
+      interestCheckboxes.forEach(checkbox => {
+        interests.push(checkbox.value);
+      });
+      
+      // Collect achievements
+      const achievements = [];
+      const achievementInputs = achievementsContainer.querySelectorAll(".achievement-input");
+      achievementInputs.forEach(input => {
+        if (input.value.trim()) {
+          achievements.push(input.value.trim());
+        }
+      });
+      
+      // Get profile picture URL
+      const profilePic = profilePicPlaceholder.style.backgroundImage;
+      const profilePicUrl = profilePic ? profilePic.replace(/url\(["']?([^"']+)["']?\)/, "$1") : "";
+      
+      // Prepare data
+      const profileData = {
+        name,
+        role,
+        company,
+        domain,
+        bio,
+        interests,
+        achievements,
+        demoLink,
+        profilePic: profilePicUrl
+      };
+      
+      // Show loading state
+      saveProfileBtn.disabled = true;
+      saveProfileBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+      
+      try {
+        const res = await fetch("http://localhost:5000/api/profile", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(profileData)
+        });
+        
+        const data = await res.json();
+        
+        if (res.ok) {
+          alert("Profile saved successfully!");
+          // Optionally redirect to home or profile page
+          showPage("home");
+        } else {
+          alert(`Error: ${data.error || "Failed to save profile"}`);
+        }
+      } catch (err) {
+        console.error("Profile save error:", err);
+        alert("Failed to save profile. Please try again.");
+      } finally {
+        // Reset button state
+        saveProfileBtn.disabled = false;
+        saveProfileBtn.innerHTML = '<i class="fas fa-save"></i> Save Profile';
+      }
+    });
+  }
+})();
+
+// =============================
+// Profile Fetching Functionality
+// =============================
+(function setupProfileFetching() {
+  // Function to fetch profile by name (can be called from anywhere)
+  window.fetchProfile = async function(name) {
+    try {
+      const res = await fetch(`http://localhost:5000/api/profile/${encodeURIComponent(name)}`);
+      const data = await res.json();
+      
+      if (res.ok) {
+        return data.profile;
+      } else {
+        console.error("Profile fetch error:", data.error);
+        return null;
+      }
+    } catch (err) {
+      console.error("Profile fetch error:", err);
+      return null;
+    }
+  };
+  
+  // Function to list all profiles
+  window.fetchAllProfiles = async function() {
+    try {
+      const res = await fetch("http://localhost:5000/api/profiles");
+      const data = await res.json();
+      
+      if (res.ok) {
+        return data.profiles;
+      } else {
+        console.error("Profiles fetch error:", data.error);
+        return [];
+      }
+    } catch (err) {
+      console.error("Profiles fetch error:", err);
+      return [];
+    }
+  };
 })();

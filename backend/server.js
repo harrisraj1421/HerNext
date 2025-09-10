@@ -9,11 +9,18 @@ require("dotenv").config({ path: path.join(__dirname, ".env") });
 
 // OpenAI client (v5+) with optional custom base URL (Azure/OpenRouter/self-hosted)
 const OpenAI = require("openai");
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-  baseURL: process.env.OPENAI_BASE_URL || undefined,
-  // Optional: raise if missing to surface config issues early when actually used
-});
+let openai = null;
+
+// Only initialize OpenAI if API key is provided
+if (process.env.OPENAI_API_KEY) {
+  openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+    baseURL: process.env.OPENAI_BASE_URL || undefined,
+  });
+  console.log("✅ OpenAI client initialized");
+} else {
+  console.log("⚠️  OpenAI API key not provided - AI features will use mock responses");
+}
 
 const app = express();
 app.use(cors());
@@ -124,11 +131,11 @@ app.post("/login", async (req, res) => {
     return res.status(400).json({ error: "Missing email or password" });
   }
   try {
-    const user = await User.findOne({ email, password });
-    if (!user) {
+  const user = await User.findOne({ email, password });
+  if (!user) {
       return res.status(401).json({ error: "Invalid credentials" });
-    }
-    res.json({ message: "Login successful!", user });
+  }
+  res.json({ message: "Login successful!", user });
   } catch (err) {
     res.status(500).json({ error: "Login failed", details: String(err.message || err) });
   }
@@ -161,11 +168,18 @@ app.post("/api/chat", async (req, res) => {
     const hasUserText = chatMessages.some(m => m && m.role && m.content && String(m.content).trim().length > 0);
     if (!hasUserText) return res.status(400).json({ error: "No message provided" });
 
-    // If no API key is configured, return a helpful mock so frontend works
-    if (!process.env.OPENAI_API_KEY) {
+    // If no OpenAI client is configured, return a helpful mock so frontend works
+    if (!openai) {
       const lastUser = userMessages[userMessages.length - 1]?.content || "";
-      const fallback = `Mock reply (no OPENAI_API_KEY). I received: ${lastUser.slice(0, 500)}`;
-      return res.json({ reply: fallback, mock: true });
+      const mockReplies = [
+        "I'm here to help with your career transition! What specific area would you like guidance on?",
+        "That's a great question! Let me help you explore your career options.",
+        "I understand you're looking for career advice. Can you tell me more about your background?",
+        "Career transitions can be challenging but rewarding. What skills are you looking to develop?",
+        "I'd be happy to help you plan your career path. What's your current situation?"
+      ];
+      const randomReply = mockReplies[Math.floor(Math.random() * mockReplies.length)];
+      return res.json({ reply: randomReply, mock: true });
     }
 
     // Use a cost-effective model by default
@@ -245,6 +259,79 @@ app.use((err, _req, res, _next) => {
   }
   console.error("Unhandled server error", err);
   res.status(500).json({ error: "Server error", details: String(err.message || err) });
+});
+
+// =============================
+// Profile Management API
+// =============================
+// In-memory storage for profiles (replace with DB later)
+const profiles = new Map();
+
+// POST /api/profile - Save profile data
+app.post("/api/profile", async (req, res) => {
+  try {
+    const { name, role, company, domain, bio, interests, achievements, demoLink, profilePic } = req.body || {};
+    
+    if (!name || !name.trim()) {
+      return res.status(400).json({ error: "Name is required" });
+    }
+
+    const profileData = {
+      id: Date.now().toString(),
+      name: name.trim(),
+      role: role || "",
+      company: company || "",
+      domain: domain || "",
+      bio: bio || "",
+      interests: Array.isArray(interests) ? interests : [],
+      achievements: Array.isArray(achievements) ? achievements.filter(a => a && a.trim()) : [],
+      demoLink: demoLink || "",
+      profilePic: profilePic || "",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    profiles.set(name.toLowerCase(), profileData);
+    
+    res.json({ 
+      message: "Profile saved successfully", 
+      profile: profileData 
+    });
+  } catch (err) {
+    console.error("/api/profile error", err);
+    res.status(500).json({ error: "Failed to save profile", details: String(err.message || err) });
+  }
+});
+
+// GET /api/profile/:name - Fetch profile by name
+app.get("/api/profile/:name", (req, res) => {
+  try {
+    const { name } = req.params;
+    if (!name) {
+      return res.status(400).json({ error: "Name parameter is required" });
+    }
+
+    const profile = profiles.get(name.toLowerCase());
+    if (!profile) {
+      return res.status(404).json({ error: "Profile not found" });
+    }
+
+    res.json({ profile });
+  } catch (err) {
+    console.error("/api/profile/:name error", err);
+    res.status(500).json({ error: "Failed to fetch profile", details: String(err.message || err) });
+  }
+});
+
+// GET /api/profiles - List all profiles
+app.get("/api/profiles", (req, res) => {
+  try {
+    const allProfiles = Array.from(profiles.values());
+    res.json({ profiles: allProfiles });
+  } catch (err) {
+    console.error("/api/profiles error", err);
+    res.status(500).json({ error: "Failed to fetch profiles", details: String(err.message || err) });
+  }
 });
 
 // 404 handler (last)

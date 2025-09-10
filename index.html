@@ -372,11 +372,11 @@
                     <h2>Login to HerNext</h2>
                     <div class="form-group">
                         <label>Email Address</label>
-                        <input type="email" class="form-control" placeholder="Enter your email">
+                        <input type="email" id="loginEmail" class="form-control" placeholder="Enter your email" required>
                     </div>
                     <div class="form-group">
                         <label>Password</label>
-                        <input type="password" class="form-control" placeholder="Enter your password">
+                        <input type="password" id="loginPassword" class="form-control" placeholder="Enter your password" required>
                     </div>
                     <button class="btn btn-primary" style="width: 100%;">Login</button>
                     <p style="text-align: center; margin-top: 20px;">Don't have an account? <a href="#" id="showRegister" style="color: #673ab7; text-decoration: none; font-weight: 500;">Register</a></p>
@@ -391,29 +391,29 @@
             <div class="registration-form">
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Full Name</label>
-                        <input type="text" class="form-control" placeholder="Enter your full name">
+                        <label>Full Name *</label>
+                        <input type="text" id="regFullName" class="form-control" placeholder="Enter your full name" required>
                     </div>
                     <div class="form-group">
                         <label>Mobile Number</label>
-                        <input type="tel" class="form-control" placeholder="Enter your mobile number">
+                        <input type="tel" id="regMobile" class="form-control" placeholder="Enter your mobile number">
                     </div>
                 </div>
                 
                 <div class="form-row">
                     <div class="form-group">
                         <label>Date of Birth</label>
-                        <input type="date" class="form-control">
+                        <input type="date" id="regDob" class="form-control">
                     </div>
                     <div class="form-group">
                         <label>State</label>
-                        <select class="form-control">
-                            <option>Select State</option>
-                            <option>Maharashtra</option>
-                            <option>Karnataka</option>
-                            <option>Tamil Nadu</option>
-                            <option>Delhi</option>
-                            <option>Uttar Pradesh</option>
+                        <select id="regState" class="form-control">
+                            <option value="">Select State</option>
+                            <option value="Maharashtra">Maharashtra</option>
+                            <option value="Karnataka">Karnataka</option>
+                            <option value="Tamil Nadu">Tamil Nadu</option>
+                            <option value="Delhi">Delhi</option>
+                            <option value="Uttar Pradesh">Uttar Pradesh</option>
                         </select>
                     </div>
                 </div>
@@ -421,20 +421,20 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>City</label>
-                        <select class="form-control">
-                            <option>Select City</option>
-                            <option>Mumbai</option>
-                            <option>Pune</option>
-                            <option>Nagpur</option>
+                        <select id="regCity" class="form-control">
+                            <option value="">Select City</option>
+                            <option value="Mumbai">Mumbai</option>
+                            <option value="Pune">Pune</option>
+                            <option value="Nagpur">Nagpur</option>
                         </select>
                     </div>
                     <div class="form-group">
                         <label>College Name</label>
-                        <select class="form-control">
-                            <option>Select College</option>
-                            <option>Indian Institute of Technology</option>
-                            <option>National Institute of Technology</option>
-                            <option>University of Mumbai</option>
+                        <select id="regCollege" class="form-control">
+                            <option value="">Select College</option>
+                            <option value="Indian Institute of Technology">Indian Institute of Technology</option>
+                            <option value="National Institute of Technology">National Institute of Technology</option>
+                            <option value="University of Mumbai">University of Mumbai</option>
                         </select>
                     </div>
                 </div>
@@ -442,28 +442,28 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>College ID Proof</label>
-                        <input type="file" class="form-control">
+                        <input type="file" id="regIdProof" class="form-control">
                     </div>
                     <div class="form-group">
                         <label>Batch</label>
-                        <select class="form-control">
-                            <option>Select Batch</option>
-                            <option>2023</option>
-                            <option>2022</option>
-                            <option>2021</option>
-                            <option>2020</option>
+                        <select id="regBatch" class="form-control">
+                            <option value="">Select Batch</option>
+                            <option value="2023">2023</option>
+                            <option value="2022">2022</option>
+                            <option value="2021">2021</option>
+                            <option value="2020">2020</option>
                         </select>
                     </div>
                 </div>
                 
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Email Address</label>
-                        <input type="email" class="form-control" placeholder="Enter your email">
+                        <label>Email Address *</label>
+                        <input type="email" id="regEmail" class="form-control" placeholder="Enter your email" required>
                     </div>
                     <div class="form-group">
-                        <label>Password</label>
-                        <input type="password" class="form-control" placeholder="Create a password">
+                        <label>Password *</label>
+                        <input type="password" id="regPassword" class="form-control" placeholder="Create a password" required>
                     </div>
                 </div>
                 
